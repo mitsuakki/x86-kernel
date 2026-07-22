@@ -1,0 +1,46 @@
+# Auto-label PRs based on changed files.
+# Format: https://github.com/actions/labeler
+
+arch:boot:
+  - changed-files:
+    - any-glob-to-any-file: "boot/**"
+
+arch:interrupt:
+  - changed-files:
+    - any-glob-to-any-file: "kernel/interrupt*"
+
+arch:paging:
+  - changed-files:
+    - any-glob-to-any-file: "kernel/paging*"
+
+arch:sched:
+  - changed-files:
+    - any-glob-to-any-file: "kernel/sched*"
+
+arch:syscall:
+  - changed-files:
+    - any-glob-to-any-file: "kernel/syscall*"
+
+toolchain:
+  - changed-files:
+    - any-glob-to-any-file:
+      - "Makefile"
+      - "**/Makefile"
+      - ".github/workflows/**"
+      - "linker.ld"
+      - "**/*.ld"
+
+docs:
+  - changed-files:
+    - any-glob-to-any-file:
+      - "*.md"
+      - "docs/**"
+      - "**/*.md"
+
+driver:
+  - changed-files:
+    - any-glob-to-any-file: "kernel/driver*"
+
+enhancement:
+  - changed-files:
+    - any-glob-to-any-file: "kernel/**"

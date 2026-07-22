@@ -61,3 +61,7 @@
 - name: wontfix
   color: "ffffff"
   description: "This will not be worked on"
+
+- name: stale
+  color: "bfd4f2"
+  description: "Marked stale due to inactivity"
