@@ -1,0 +1,9 @@
+# Kernel subsystems
+boot/     @mitsuakki
+kernel/   @mitsuakki
+
+# Build system
+Makefile  @mitsuakki
+
+# CI / tooling
+.github/  @mitsuakki

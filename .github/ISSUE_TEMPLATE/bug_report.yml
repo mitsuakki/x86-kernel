@@ -1,0 +1,61 @@
+name: Bug Report
+description: Something isn't working
+title: "[BUG]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to fill out this bug report.
+
+  - type: input
+    id: branch
+    attributes:
+      label: Branch / Commit
+      description: Which branch or commit did this happen on?
+      placeholder: "m1-boot / a7d4aa0"
+    validations:
+      required: true
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: Describe the bug. What did you expect to happen?
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: Exact steps to trigger the bug.
+      placeholder: |
+        1. Run `make build`
+        2. Run `make run`
+        3. Observe ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant logs / output
+      description: Paste QEMU output, compiler errors, or register dumps.
+      render: text
+
+  - type: dropdown
+    id: arch
+    attributes:
+      label: Architecture area
+      options:
+        - arch:boot
+        - arch:interrupt
+        - arch:paging
+        - arch:sched
+        - arch:syscall
+        - toolchain
+        - driver
+        - other
+    validations:
+      required: true

@@ -1,0 +1,55 @@
+name: Feature Request
+description: Propose a new feature or enhancement
+title: "[FEAT]: "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Describe the feature you'd like to see.
+
+  - type: dropdown
+    id: milestone
+    attributes:
+      label: Target milestone
+      description: Which kernel subsystem does this belong to?
+      options:
+        - M1 - Boot to long mode
+        - M2 - Interrupts
+        - M3 - Paging
+        - M4 - Timer
+        - M5 - Memory management
+        - M6 - Scheduling
+        - M7 - Syscalls
+        - Future / Unsure
+    validations:
+      required: true
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem / Motivation
+      description: What problem does this feature solve?
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+      description: How should it work? Include technical details if relevant.
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Other approaches you've thought about.
+
+  - type: checkboxes
+    id: willing
+    attributes:
+      label: Contribution
+      options:
+        - label: I'm willing to submit a PR for this feature

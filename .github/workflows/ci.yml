@@ -1,0 +1,64 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install toolchain
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y nasm gcc-multilib binutils qemu-system-x86
+
+      - name: Build kernel
+        run: make build
+
+      - name: Check artifacts
+        run: |
+          ls -la out/
+          file out/bootloader.bin
+          file out/kernel.elf
+          file out/kernel.bin
+          file out/os.img
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: kernel-build
+          path: out/
+          retention-days: 7
+
+  lint:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Lint assembly
+        run: |
+          echo "Checking ASM syntax..."
+          for f in boot/*.asm; do
+            echo "  Checking $f"
+            nasm -f bin -o /dev/null "$f" || exit 1
+          done
+
+      - name: Lint C sources
+        run: |
+          echo "Checking C syntax..."
+          for f in kernel/*.c; do
+            echo "  Checking $f"
+            gcc -ffreestanding -nostdlib -m32 -Wall -Wextra -Werror \
+              -std=c11 -fsyntax-only "$f" || exit 1
+          done
+
+      - name: Lint Makefile
+        uses: mrtazz/checkmake-action@main
+        continue-on-error: true
