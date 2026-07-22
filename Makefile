@@ -14,8 +14,8 @@ KERNEL_BIN := $(OUT_DIR)/kernel.bin
 OS_IMG     := $(OUT_DIR)/os.img
 
 ASMFLAGS := -f bin
-CFLAGS   := -ffreestanding -nostdlib -m32 -Wall -Wextra -O2 -std=c11
-LDFLAGS  := -m elf_i386 -nostdlib -Ttext 0x1000
+CFLAGS   := -ffreestanding -nostdlib -m32 -Wall -Wextra -O2 -std=c11 -fno-asynchronous-unwind-tables -fno-pic
+LDFLAGS  := -melf_i386 -nostdlib -Ttext 0x1000
 
 .PHONY: all build run clean
 
@@ -30,7 +30,8 @@ $(BOOT_BIN): $(BOOT_DIR)/bootloader.asm | $(OUT_DIR)
 	$(ASM) $(ASMFLAGS) -o $@ $<
 
 $(KERNEL_ELF): $(KERNEL_DIR)/kernel.c | $(OUT_DIR)
-	$(CC) $(CFLAGS) -nostartfiles -Wl,-e,kernel_main -o $@ $<
+	$(CC) $(CFLAGS) -c -o $(OUT_DIR)/kernel.o $<
+	$(LD) $(LDFLAGS) -e kernel_main -o $@ $(OUT_DIR)/kernel.o
 
 $(KERNEL_BIN): $(KERNEL_ELF) | $(OUT_DIR)
 	$(OBJCOPY) -O binary $< $@
