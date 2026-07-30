@@ -8,16 +8,17 @@ BOOT_DIR   := boot
 KERNEL_DIR := kernel
 OUT_DIR    := out
 
-BOOT_BIN   := $(OUT_DIR)/bootloader.bin
+BOOT_BIN   := $(OUT_DIR)/boot.bin
+LOADER_BIN := $(OUT_DIR)/loader.bin
 KERNEL_ELF := $(OUT_DIR)/kernel.elf
-KERNEL_BIN := $(OUT_DIR)/kernel.bin
 OS_IMG     := $(OUT_DIR)/os.img
 
 ASMFLAGS := -f bin
-CFLAGS   := -ffreestanding -nostdlib -m32 -Wall -Wextra -O2 -std=c11 -fno-asynchronous-unwind-tables -fno-pic
-LDFLAGS  := -melf_i386 -nostdlib -Ttext 0x1000
+CFLAGS   := -ffreestanding -nostdlib -m32 -Wall -Wextra -O2 -std=c11 \
+            -fno-asynchronous-unwind-tables -fno-pic -fno-stack-protector
+LDFLAGS  := -melf_i386 -nostdlib -T kernel/linker.ld
 
-.PHONY: all build run clean
+.PHONY: all build run debug gdb clean
 
 all: build
 
@@ -26,22 +27,34 @@ build: $(OS_IMG)
 $(OUT_DIR):
 	mkdir -p $@
 
-$(BOOT_BIN): $(BOOT_DIR)/bootloader.asm | $(OUT_DIR)
+# Stage 1 — 512-byte bootsector (LBA 0)
+$(BOOT_BIN): $(BOOT_DIR)/boot.asm | $(OUT_DIR)
 	$(ASM) $(ASMFLAGS) -o $@ $<
 
-$(KERNEL_ELF): $(KERNEL_DIR)/kernel.c | $(OUT_DIR)
+# Stage 2 — loads kernel, A20, GDT, protected mode, paging, ELF parser (LBA 1)
+$(LOADER_BIN): $(BOOT_DIR)/loader.asm $(BOOT_DIR)/gdt.asm | $(OUT_DIR)
+	$(ASM) $(ASMFLAGS) -o $@ $<
+
+# Kernel ELF — linked at 0x100000 (1 MiB)
+$(KERNEL_ELF): $(KERNEL_DIR)/kernel.c $(KERNEL_DIR)/linker.ld | $(OUT_DIR)
 	$(CC) $(CFLAGS) -c -o $(OUT_DIR)/kernel.o $<
-	$(LD) $(LDFLAGS) -e kernel_main -o $@ $(OUT_DIR)/kernel.o
+	$(LD) $(LDFLAGS) -o $@ $(OUT_DIR)/kernel.o
 
-$(KERNEL_BIN): $(KERNEL_ELF) | $(OUT_DIR)
-	$(OBJCOPY) -O binary $< $@
-
-$(OS_IMG): $(BOOT_BIN) $(KERNEL_BIN) | $(OUT_DIR)
-	cat $(BOOT_BIN) $(KERNEL_BIN) > $@
-	dd if=/dev/zero bs=1024 count=1440 >> $@ 2>/dev/null || true
+# Disk image — 1.44 MiB floppy
+$(OS_IMG): $(BOOT_BIN) $(LOADER_BIN) $(KERNEL_ELF) | $(OUT_DIR)
+	dd if=/dev/zero of=$@ bs=512 count=2880
+	dd if=$(BOOT_BIN) of=$@ bs=512 count=1 conv=notrunc
+	dd if=$(LOADER_BIN) of=$@ bs=512 seek=1 conv=notrunc
+	dd if=$(KERNEL_ELF) of=$@ bs=512 seek=9 conv=notrunc
 
 run: $(OS_IMG)
-	$(QEMU) -fda $<
+	$(QEMU) -fda $< -serial stdio
+
+debug: $(OS_IMG)
+	$(QEMU) -fda $< -serial stdio -s -S
+
+gdb:
+	gdb -ex "target remote localhost:1234" -ex "symbol-file $(KERNEL_ELF)"
 
 clean:
 	rm -rf $(OUT_DIR)
