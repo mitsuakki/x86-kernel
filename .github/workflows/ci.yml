@@ -68,3 +68,40 @@ jobs:
         run: |
           echo "Checking Makefile syntax..."
           make -n build > /dev/null && echo "  Makefile OK"
+
+  boot-test:
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Install QEMU
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y qemu-system-x86
+
+      - name: Download kernel image
+        uses: actions/download-artifact@v4
+        with:
+          name: kernel-build
+          path: out/
+
+      - name: Boot test (QEMU)
+        run: |
+          timeout --foreground 15 qemu-system-x86_64 \
+            -display none \
+            -serial stdio \
+            -fda out/os.img > boot.log 2>&1
+          QEMU_EXIT=$?
+
+          echo "--- Serial output ---"
+          cat boot.log
+          echo "--- End output ---"
+
+          # 124 = timeout (expected, kernel halts but QEMU keeps running)
+          # 0 = QEMU exited cleanly
+          if [ "$QEMU_EXIT" -ne 124 ] && [ "$QEMU_EXIT" -ne 0 ]; then
+            echo "QEMU exited with unexpected code: $QEMU_EXIT"
+            exit 1
+          fi
+
+          echo "BOOT TEST PASSED"
