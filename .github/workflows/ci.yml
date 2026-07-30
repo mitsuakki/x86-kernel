@@ -24,9 +24,9 @@ jobs:
       - name: Check artifacts
         run: |
           ls -la out/
-          file out/bootloader.bin
+          file out/boot.bin
+          file out/loader.bin
           file out/kernel.elf
-          file out/kernel.bin
           file out/os.img
 
       - name: Upload artifacts
@@ -87,11 +87,13 @@ jobs:
 
       - name: Boot test (QEMU)
         run: |
+          set +e
           timeout --foreground 15 qemu-system-x86_64 \
             -display none \
             -serial stdio \
             -fda out/os.img > boot.log 2>&1
           QEMU_EXIT=$?
+          set -e
 
           echo "--- Serial output ---"
           cat boot.log
