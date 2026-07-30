@@ -9,7 +9,7 @@ Text output via VGA working.
 - [x] Identity paging (4 MiB, two-level)
 - [x] ELF32 parser, kernel jump
 - [ ] Long mode (IA-32e, 4-level paging)
-- [ ] VGA text output
+- [X] VGA text output
 
 ---
 
@@ -569,7 +569,7 @@ finally flips CS.L=1 and enters full 64-bit long mode.
 
 ---
 
-## 5. Text output (VGA) — [TODO]
+## 5. Text output (VGA)
 
 The VGA text-mode buffer lives at `0xB8000`.  Each character is 2 bytes:
 
