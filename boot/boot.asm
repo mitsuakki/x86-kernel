@@ -24,11 +24,15 @@ start:
 
     mov [drive_num], dl        ; BIOS drive number
 
-    ; Load loader from LBA 1 using BIOS Extended Read
-    mov si, dap
-    mov ah, 0x42
+    ; Load loader from LBA 1 using CHS
+    mov ah, 0x02
+    mov al, 8                 ; 8 sectors
+    mov ch, 0                 ; cylinder 0
+    mov cl, 2                 ; sector 2 (LBA 1 on floppy)
+    mov dh, 0                 ; head 0
     mov dl, [drive_num]
-    int 0x13
+    mov bx, 0x8000            ; buffer offset (physical = es:bx = seg:off = 0x0000:0x8000)
+    int 0x13                  ; packet size (16 bytes)
     jc  disk_err
 
     jmp 0x0000:0x8000
