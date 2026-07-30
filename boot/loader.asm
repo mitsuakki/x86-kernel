@@ -24,9 +24,15 @@ stage2_start:
 
     mov [drive_num], dl        ; BIOS drive number (passed by stage 1)
 
-    ; ---- 1. Load kernel ELF while still in real mode ----
-    mov si, dap2
-    mov ah, 0x42
+    ; ---- 1. Load kernel ELF from LBA 9 ----
+    mov ax, 0x1000
+    mov es, ax          ; ES = 0x1000
+    mov bx, 0x0000      ; ES:BX = 0x1000:0x0000 = physical 0x10000
+    mov ah, 0x02
+    mov al, 9           ; 9 sectors (sectors 10-18, fills track 0 head 0)
+    mov ch, 0           ; cylinder 0
+    mov cl, 10          ; sector 10 (LBA 9 → (9%18)+1=10)
+    mov dh, 0           ; head 0
     mov dl, [drive_num]
     int 0x13
     jc  disk_err
@@ -279,8 +285,8 @@ pmode_entry:
     ;   0x12: e_machine[2]  (3 = EM_386)
     ;   0x18: e_entry[4]    (virtual address of _start)
     ;   0x1C: e_phoff[4]    (offset to program header table, in bytes)
-    ;   0x2C: e_phentsize[2] (size of one program header, always 32)
-    ;   0x2E: e_phnum[2]     (number of program headers)
+    ;   0x2A: e_phentsize[2] (size of one program header, always 32)
+    ;   0x2C: e_phnum[2]     (number of program headers)
     ;
     ; ELF32 program header layout (32 bytes each):
     ;   0x00: p_type[4]   (1 = PT_LOAD = loadable segment)
