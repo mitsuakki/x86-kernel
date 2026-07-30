@@ -451,8 +451,8 @@ physical address and zero the BSS.
 | 0x05 | 1 | e_ident[5] | Data: 1 = little-endian |
 | 0x18 | 4 | e_entry | Entry point virtual address |
 | 0x1C | 4 | e_phoff | Program header table offset |
-| 0x2C | 2 | e_phentsize | Size of each program header |
-| 0x2E | 2 | e_phnum | Number of program headers |
+| 0x2A | 2 | e_phentsize | Size of each program header |
+| 0x2C | 2 | e_phnum | Number of program headers |
 
 **Program header layout** (32-bit, 32 bytes each):
 | Offset | Size | Name | Meaning |

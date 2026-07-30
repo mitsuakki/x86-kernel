@@ -303,8 +303,8 @@ pmode_entry:
     mov  eax, [esi + 0x18]         ; e_entry (virtual address of kernel_main)
     mov  ebx, [esi + 0x1C]         ; e_phoff (byte offset to program headers)
     add  ebx, 0x10000              ; turn file offset into linear address
-    movzx ecx, word [esi + 0x2C]   ; e_phentsize (size of each program header)
-    movzx edx, word [esi + 0x2E]   ; e_phnum (how many program headers)
+    movzx ecx, word [esi + 0x2A]   ; e_phentsize (size of each program header)
+    movzx edx, word [esi + 0x2C]   ; e_phnum (how many program headers)
 
     push eax                       ; save entry point
 
