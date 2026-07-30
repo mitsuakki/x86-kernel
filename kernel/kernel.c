@@ -1,5 +1,8 @@
-#define VGA_BUFFER 0xB8000
-volatile unsigned short *vga_buffer;
+#define VGA_BUFFER ((volatile unsigned short *)0xB8000)
+#define VGA_WIDTH 80
+#define VGA_HEIGHT 25
+
+volatile unsigned int vga_cursor = 0;
 
 enum vga_color {
     VGA_COLOR_BLACK = 0x0,
@@ -20,21 +23,15 @@ enum vga_color {
     VGA_COLOR_WHITE = 0xF,
 };
 
-void init()
-{
-    vga_buffer = (volatile unsigned short *)VGA_BUFFER;
-}
-
 void putc(char c, enum vga_color color)
 {
-    if (!vga_buffer)
+    if (vga_cursor >= VGA_WIDTH * VGA_HEIGHT)
         return;
 
-    *vga_buffer = c | (color << 8);
-    vga_buffer++;
+    VGA_BUFFER[vga_cursor++] = c | (color << 8);
 }
 
-void write(char *str, enum vga_color color)
+void write(const char *str, enum vga_color color)
 {
     while (*str) {
         putc(*str, color);
@@ -42,9 +39,18 @@ void write(char *str, enum vga_color color)
     }
 }
 
+void clear_screen()
+{    
+    for (int i = 0; i < VGA_WIDTH * VGA_HEIGHT; i++) {
+        VGA_BUFFER[i] = ' ' | (VGA_COLOR_BLACK << 8);
+    }
+
+    vga_cursor = 0;
+}
+
 void kernel_main()
 {
-    init();
+    clear_screen();
     write("Hello World!", VGA_COLOR_WHITE);
 
     for (;;) {}
