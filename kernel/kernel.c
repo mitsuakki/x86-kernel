@@ -51,7 +51,7 @@ void clear_screen()
 void kernel_main()
 {
     clear_screen();
-    write("Hello World!", VGA_COLOR_WHITE);
+    write("I love my girlfriend!", VGA_COLOR_WHITE);
 
     for (;;) {}
 }
