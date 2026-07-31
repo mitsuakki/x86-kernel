@@ -1,27 +1,6 @@
-#define VGA_BUFFER ((volatile unsigned short *)0xB8000)
-#define VGA_WIDTH 80
-#define VGA_HEIGHT 25
+#include "terminal.h"
 
 volatile unsigned int vga_cursor = 0;
-
-enum vga_color {
-    VGA_COLOR_BLACK = 0x0,
-    VGA_COLOR_BLUE = 0x1,
-    VGA_COLOR_GREEN = 0x2,
-    VGA_COLOR_CYAN = 0x3,
-    VGA_COLOR_RED = 0x4,
-    VGA_COLOR_MAGENTA = 0x5,
-    VGA_COLOR_BROWN = 0x6,
-    VGA_COLOR_LIGHT_GRAY = 0x7,
-    VGA_COLOR_DARK_GRAY = 0x8,
-    VGA_COLOR_LIGHT_BLUE = 0x9,
-    VGA_COLOR_LIGHT_GREEN = 0xA,
-    VGA_COLOR_LIGHT_CYAN = 0xB,
-    VGA_COLOR_LIGHT_RED = 0xC,
-    VGA_COLOR_LIGHT_MAGENTA = 0xD,
-    VGA_COLOR_LIGHT_BROWN = 0xE,
-    VGA_COLOR_WHITE = 0xF,
-};
 
 void putc(char c, enum vga_color color)
 {
@@ -40,9 +19,9 @@ void write(const char *str, enum vga_color color)
 }
 
 void clear_screen()
-{    
+{
     for (int i = 0; i < VGA_WIDTH * VGA_HEIGHT; i++) {
-        VGA_BUFFER[i] = ' ' | (VGA_COLOR_BLACK << 8);
+        VGA_BUFFER[i] = ' ' | (COLOR_BLACK << 8);
     }
 
     vga_cursor = 0;
@@ -51,7 +30,7 @@ void clear_screen()
 void kernel_main()
 {
     clear_screen();
-    write("I love my girlfriend!", VGA_COLOR_WHITE);
+    write("I love my girlfriend!", COLOR_WHITE);
 
     for (;;) {}
 }
