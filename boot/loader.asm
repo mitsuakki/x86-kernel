@@ -146,6 +146,15 @@ pmode_entry:
     mov  al, 0
     rep  stosb
 
+    ; Save BSS bounds for this segment: start = paddr + filesz, end = paddr + memsz
+    ; Stored at __bss_start / __bss_end in longmode.asm for the 64-bit stub.
+    mov  eax, [ebx + 0x18]         ; p_paddr low
+    add  eax, [ebx + 0x20]         ; + p_filesz → BSS start
+    mov  [__bss_start], eax
+    mov  eax, [ebx + 0x18]         ; p_paddr low
+    add  eax, [ebx + 0x28]         ; + p_memsz → BSS end
+    mov  [__bss_end], eax
+
 .ph_copy_done:
     pop  ecx
     pop  esi

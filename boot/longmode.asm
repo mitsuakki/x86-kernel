@@ -29,6 +29,12 @@ GDT_DATA   equ 0x10
 ; ---- Kernel entry point (set by ELF64 parser in loader.asm) ----
 kernel_entry: dq 0
 
+; ---- Kernel BSS bounds (linker-defined symbols in kernel ELF) ----
+; These are absolute addresses resolved at kernel link time.
+; The ELF parser copies them from the kernel's symbol table.
+__bss_start: dq 0
+__bss_end:   dq 0
+
 ; ===============================================================
 ; 32-bit section: build tables, enable paging, far jump to 64-bit.
 ; ===============================================================
@@ -104,8 +110,25 @@ long_mode_entry:
     mov  gs, ax
     mov  ss, ax
 
-    ; Load 64-bit kernel entry point.
-    ; Avoid NASM RIP-relative [label] — use immediate address + deref.
-    mov  eax, kernel_entry          ; EAX = address of kernel_entry (imm32)
-    mov  rax, [rax]                 ; RAX = 64-bit kernel entry point
-    jmp  rax                        ; → 64-bit kernel, never returns
+    ; Zero kernel BSS using bounds saved by ELF64 parser.
+    ; __bss_start / __bss_end are in this 64-bit section — no
+    ; RIP-relative issue since we load addresses as immediates.
+    mov  eax, __bss_start           ; EAX = address of __bss_start
+    mov  rdi, [rax]                 ; RDI = BSS start (physical addr)
+    mov  eax, __bss_end
+    mov  rcx, [rax]                 ; RCX = BSS end
+    sub  rcx, rdi                   ; RCX = byte count
+    jz   .bss_done
+    xor  eax, eax
+    rep  stosb                      ; zero BSS
+.bss_done:
+
+    ; Align stack to 16 bytes — SysV AMD64 ABI requires RSP % 16 == 0
+    ; before call.  RSP is currently 8 mod 16 (32-bit call left a
+    ; 4-byte return address on the 64-bit stack).
+    and  rsp, ~0xF
+
+    ; Load kernel entry and call — proper ABI boundary.
+    mov  eax, kernel_entry
+    mov  rax, [rax]
+    call rax                        ; → kernel_main(), never returns
