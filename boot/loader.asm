@@ -8,8 +8,9 @@
 ;  1. Load kernel ELF from disk while BIOS is still available.
 ;  2. Enable A20 gate.  Without this, every 1 MiB boundary wraps to 0.
 ;  3. Load a GDT and set CR0.PE to enter 32-bit protected mode.
-;  4. Build page tables (identity-map 0-4 MiB), enable paging via CR0.PG.
-;  5. Parse the kernel ELF: walk program headers, copy PT_LOAD segments,
+;  4. Check CPUID + long mode support.
+;  5. Build page tables (identity-map 0-4 MiB), enable paging via CR0.PG.
+;  6. Parse the kernel ELF: walk program headers, copy PT_LOAD segments,
 ;     zero the .bss, then jump to the entry point.
 
 [BITS 16]
@@ -24,15 +25,9 @@ stage2_start:
 
     mov [drive_num], dl        ; BIOS drive number (passed by stage 1)
 
-    ; ---- 1. Load kernel ELF from LBA 9 ----
-    mov ax, 0x1000
-    mov es, ax          ; ES = 0x1000
-    mov bx, 0x0000      ; ES:BX = 0x1000:0x0000 = physical 0x10000
-    mov ah, 0x02
-    mov al, 9           ; 9 sectors (sectors 10-18, fills track 0 head 0)
-    mov ch, 0           ; cylinder 0
-    mov cl, 10          ; sector 10 (LBA 9 → (9%18)+1=10)
-    mov dh, 0           ; head 0
+    ; ---- 1. Load kernel ELF from disk ----
+    mov si, dap
+    mov ah, 0x42
     mov dl, [drive_num]
     int 0x13
     jc  disk_err
@@ -60,7 +55,7 @@ disk_err:
 drive_num: db 0
 
 ; DAP — kernel ELF at LBA 9, 64 KiB → physical 0x10000
-dap2:
+dap:
     db 0x10
     db 0
     dw 128                     ; 128 sectors (64 KiB)
@@ -69,150 +64,18 @@ dap2:
     dq 9                       ; starting LBA
 
 ; ===============================================================
-; A20 enable — full recommended chain
-;
-; Tests A20 first.  If already on, returns immediately.
-; Tries methods from safest → riskiest:
-;   1. BIOS INT 0x15  (AX=0x2401)
-;   2. Keyboard controller  (8042)
-;   3. Fast A20 Gate  (port 0x92)
+; 16-bit includes (must assemble in [BITS 16] context)
 ; ===============================================================
-
-enable_a20:
-    pusha
-
-    ; --- Already enabled? ---
-    call check_a20
-    test ax, ax
-    jnz  .done
-
-    ; --- Method 1: BIOS INT 0x15 ---
-    mov  ax, 0x2401
-    int  0x15
-    call check_a20
-    test ax, ax
-    jnz  .done
-
-    ; --- Method 2: Keyboard controller (8042) ---
-    call enable_a20_kbd
-    call check_a20
-    test ax, ax
-    jnz  .done
-
-    ; --- Method 3: Fast A20 Gate (port 0x92) ---
-    in   al, 0x92
-    test al, 2
-    jnz  .fast_done             ; already set
-    or   al, 2
-    and  al, 0xFE               ; keep bit 0 clear (avoid fast reset)
-    out  0x92, al
-.fast_done:
-
-    ; Final check (optional — if still off, nothing more we can do)
-    call check_a20
-
-.done:
-    popa
-    ret
-
-; ---------------------------------------------------------------
-; check_a20 — returns ax=1 if A20 enabled, ax=0 if disabled
-; Preserves all registers except ax.
-; ---------------------------------------------------------------
-check_a20:
-    push ds
-    push es
-    push si
-    push di
-    cli
-
-    xor  ax, ax
-    mov  ds, ax                 ; ds = 0x0000
-    not  ax
-    mov  es, ax                 ; es = 0xFFFF
-
-    ; Save original bytes
-    mov  al, [ds:0x0500]
-    mov  ah, [es:0x0510]
-    push ax                     ; [sp] = original bytes
-
-    ; Write different values
-    mov  byte [ds:0x0500], 0x00
-    mov  byte [es:0x0510], 0xFF
-
-    ; Read back: if A20 off, [0x0000:0x0500] aliases to same
-    ;            physical byte as [0xFFFF:0x0510]
-    cmp  byte [ds:0x0500], 0xFF  ; equal → wraparound → A20 off
-    mov  ax, 1
-    jne  .enabled                 ; not equal → A20 on
-    xor  ax, ax                   ; equal → A20 off
-.enabled:
-    ; Restore original bytes
-    pop  ax
-    mov  [ds:0x0500], al
-    mov  [es:0x0510], ah
-
-    pop  di
-    pop  si
-    pop  es
-    pop  ds
-    ret
-
-; ---------------------------------------------------------------
-; enable_a20_kbd — enable A20 via 8042 keyboard controller
-; ---------------------------------------------------------------
-enable_a20_kbd:
-    cli
-
-    call .wait_in               ; disable keyboard
-    mov  al, 0xAD
-    out  0x64, al
-
-    call .wait_in               ; read controller output port
-    mov  al, 0xD0
-    out  0x64, al
-
-    call .wait_out              ; get current value
-    in   al, 0x60
-    push ax
-
-    call .wait_in               ; write controller output port
-    mov  al, 0xD1
-    out  0x64, al
-
-    call .wait_in               ; set bit 1 (A20) in output port
-    pop  ax
-    or   al, 2
-    out  0x60, al
-
-    call .wait_in               ; re-enable keyboard
-    mov  al, 0xAE
-    out  0x64, al
-
-    call .wait_in
-    ret
-
-.wait_in:                       ; wait until input buffer empty (bit 1 = 0)
-    in   al, 0x64
-    test al, 2
-    jnz  .wait_in
-    ret
-
-.wait_out:                      ; wait until output buffer full (bit 0 = 1)
-    in   al, 0x64
-    test al, 1
-    jz   .wait_out
-    ret
-
-; ===============================================================
-; GDT (included here so labels resolve inside this binary)
-; ===============================================================
+%include "boot/a20.asm"
 %include "boot/gdt.asm"
 
 ; ===============================================================
 ; 32-bit Protected Mode
 ; ===============================================================
 [BITS 32]
+
+; 32-bit includes (pushfd/popfd/32-bit regs need correct operand size)
+%include "boot/cpuid.asm"
 
 pmode_entry:
     mov  ax, 0x10
@@ -223,7 +86,12 @@ pmode_entry:
     mov  ss, ax
     mov  esp, 0x90000
 
-    ; ---------- paging: identity-map first 4 MiB ----------
+    ; ---- 4. Check CPUID + long mode support ----
+    call check_long_mode        ; returns eax=1 if supported
+    test eax, eax
+    jz   .no_long_mode
+
+    ; ---------- 5. paging: identity-map first 4 MiB ----------
     ;
     ; Each page-table entry (PTE) maps one 4 KiB page:
     ;   bits 31:12 = physical page address (4 KiB aligned)
@@ -255,6 +123,7 @@ pmode_entry:
     mov  edi, 0xA000
     mov  eax, 0x00000003          ; page 0x00000, Present + Writable
     mov  ecx, 1024
+
 .pt_fill:
     mov  [edi], eax
     add  edi, 4
@@ -277,7 +146,7 @@ pmode_entry:
     or   eax, 0x80000000
     mov  cr0, eax
 
-    ; ---------- parse kernel ELF at 0x10000 ----------
+    ; ---------- 6. parse kernel ELF at 0x10000 ----------
     ;
     ; ELF32 header layout (bytes 0-52):
     ;   0x00: e_ident[16]  (magic: 7F 45 4C 46 = ".ELF")
@@ -348,6 +217,13 @@ pmode_entry:
 .ph_next:
     add  ebx, ecx                  ; next program header
     jmp  .ph_loop
+
+.no_long_mode:
+    mov  byte [0xB8000], 'C'       ; 'C' = CPU/long-mode error
+    mov  byte [0xB8001], 0x4F
+    cli
+    hlt
+    jmp  $
 
 .ph_done:
     pop  eax                       ; entry point
