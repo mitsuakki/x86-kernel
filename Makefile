@@ -45,10 +45,16 @@ $(LOADER_BIN): $(STAGE2_DIR)/loader.asm $(STAGE2_DIR)/a20.asm \
                $(STAGE2_DIR)/longmode.asm | $(OUT_DIR)
 	$(ASM) $(ASMFLAGS) -i $(STAGE2_DIR) -o $@ $<
 
+KERNEL_C := $(shell find $(KERNEL_DIR) -name '*.c')
+KERNEL_O := $(patsubst $(KERNEL_DIR)/%.c, $(OUT_DIR)/%.o, $(KERNEL_C))
+
 # Kernel ELF — linked at 0x100000 (1 MiB)
-$(KERNEL_ELF): $(KERNEL_DIR)/kernel.c $(KERNEL_DIR)/linker.ld | $(OUT_DIR)
-	$(CC) $(CFLAGS) -c -o $(OUT_DIR)/kernel.o $<
-	$(LD) $(LDFLAGS) -o $@ $(OUT_DIR)/kernel.o
+$(KERNEL_ELF): $(KERNEL_O) $(KERNEL_DIR)/linker.ld | $(OUT_DIR)
+	$(LD) $(LDFLAGS) -o $@ $(KERNEL_O)
+
+$(OUT_DIR)/%.o: $(KERNEL_DIR)/%.c | $(OUT_DIR)
+	@mkdir -p $(dir $@)
+	$(CC) $(CFLAGS) -c -o $@ $<
 
 # Disk image — 1.44 MiB floppy
 $(OS_IMG): $(BOOT_BIN) $(LOADER_BIN) $(KERNEL_ELF) | $(OUT_DIR)

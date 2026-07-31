@@ -107,4 +107,4 @@ typedef unsigned long long     uintmax_t;        // from 0 to 184467440737095516
 #define INTMAX_MAX        9223372036854775807LL
 #define UINTMAX_MAX       18446744073709551615ULL
 
-#endif
+#endif // STDINT_H

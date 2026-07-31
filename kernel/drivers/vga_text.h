@@ -1,9 +1,9 @@
-#ifndef TERMINAL_H
-#define TERMINAL_H
+#ifndef VGA_TEXT_H
+#define VGA_TEXT_H
 
-#include "stdint.h"
+#include "../lib/stdint.h"
 
-#define VGA_BUFFER ((volatile unsigned short *)0xB8000)
+#define VGA_BUFFER ((volatile uint16_t *)0xB8000)
 #define VGA_WIDTH 80
 #define VGA_HEIGHT 25
 
@@ -32,4 +32,4 @@ void write(const char *str, enum vga_color color);
 
 void clear_screen();
 
-#endif
+#endif // VGA_TEXT_H
