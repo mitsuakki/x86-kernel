@@ -14,9 +14,10 @@ KERNEL_ELF := $(OUT_DIR)/kernel.elf
 OS_IMG     := $(OUT_DIR)/os.img
 
 ASMFLAGS := -f bin
-CFLAGS   := -ffreestanding -nostdlib -m32 -Wall -Wextra -O2 -std=c11 \
+CFLAGS   := -ffreestanding -nostdlib -m64 -mno-red-zone -mcmodel=large \
+            -Wall -Wextra -O2 -std=c11 \
             -fno-asynchronous-unwind-tables -fno-pic -fno-stack-protector
-LDFLAGS  := -melf_i386 -nostdlib -T kernel/linker.ld
+LDFLAGS  := -melf_x86_64 -nostdlib -T kernel/linker.ld
 
 .PHONY: all build run debug gdb clean
 
