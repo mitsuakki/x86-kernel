@@ -1,0 +1,109 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install toolchain
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y nasm gcc-multilib binutils qemu-system-x86
+
+      - name: Build kernel
+        run: make build
+
+      - name: Check artifacts
+        run: |
+          ls -la out/
+          file out/boot.bin
+          file out/loader.bin
+          file out/kernel.elf
+          file out/os.img
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: kernel-build
+          path: out/
+          retention-days: 7
+
+  lint:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install toolchain
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y nasm gcc-multilib
+
+      - name: Lint assembly
+        run: |
+          echo "Checking ASM syntax..."
+          for f in boot/*.asm; do
+            echo "  Checking $f"
+            nasm -f bin -o /dev/null "$f" || exit 1
+          done
+
+      - name: Lint C sources
+        run: |
+          echo "Checking C syntax..."
+          for f in kernel/*.c; do
+            echo "  Checking $f"
+            gcc -ffreestanding -nostdlib -m32 -Wall -Wextra -Werror \
+              -std=c11 -fsyntax-only "$f" || exit 1
+          done
+
+      - name: Lint Makefile
+        run: |
+          echo "Checking Makefile syntax..."
+          make -n build > /dev/null && echo "  Makefile OK"
+
+  boot-test:
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Install QEMU
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y qemu-system-x86
+
+      - name: Download kernel image
+        uses: actions/download-artifact@v4
+        with:
+          name: kernel-build
+          path: out/
+
+      - name: Boot test (QEMU)
+        run: |
+          set +e
+          timeout --foreground 15 qemu-system-x86_64 \
+            -display none \
+            -serial stdio \
+            -fda out/os.img > boot.log 2>&1
+          QEMU_EXIT=$?
+          set -e
+
+          echo "--- Serial output ---"
+          cat boot.log
+          echo "--- End output ---"
+
+          # 124 = timeout (expected, kernel halts but QEMU keeps running)
+          # 0 = QEMU exited cleanly
+          if [ "$QEMU_EXIT" -ne 124 ] && [ "$QEMU_EXIT" -ne 0 ]; then
+            echo "QEMU exited with unexpected code: $QEMU_EXIT"
+            exit 1
+          fi
+
+          echo "BOOT TEST PASSED"

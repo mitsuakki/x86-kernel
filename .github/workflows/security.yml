@@ -1,0 +1,36 @@
+name: Security
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    - cron: "37 3 * * 3"  # Wednesdays at 03:37 UTC
+
+jobs:
+  codeql:
+    runs-on: ubuntu-latest
+    permissions:
+      security-events: write
+      actions: read
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: cpp
+
+      - name: Install toolchain
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y nasm gcc-multilib
+
+      - name: Build
+        run: make build
+
+      - name: Perform CodeQL analysis
+        uses: github/codeql-action/analyze@v3

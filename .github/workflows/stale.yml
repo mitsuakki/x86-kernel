@@ -1,0 +1,36 @@
+name: Stale
+
+on:
+  schedule:
+    - cron: "27 5 * * *"   # Daily at 05:27 UTC
+  workflow_dispatch:
+
+jobs:
+  stale:
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+      pull-requests: write
+
+    steps:
+      - uses: actions/stale@v9
+        with:
+          days-before-stale: 30
+          days-before-close: 7
+          stale-issue-label: "stale"
+          stale-pr-label: "stale"
+          exempt-issue-labels: "good first issue,help wanted,security"
+          exempt-pr-labels: "good first issue,help wanted"
+
+          stale-issue-message: |
+            Issue marked stale — 30 days no activity. Closes in 7 days if no update.
+            Comment or push commit to keep open.
+
+          stale-pr-message: |
+            PR marked stale — 30 days no activity. Closes in 7 days if no update.
+            Push new commits or comment to keep open.
+
+          close-issue-message: "Closed for inactivity. Reopen if still relevant."
+          close-pr-message: "Closed for inactivity. Rebase and reopen if still needed."
+
+          operations-per-run: 30

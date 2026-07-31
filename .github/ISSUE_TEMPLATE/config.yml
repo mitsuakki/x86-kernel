@@ -1,0 +1,6 @@
+blank_issues_enabled: true
+
+contact_links:
+  - name: Question / Discussion
+    url: https://github.com/mitsuakki/x86-kernel/discussions
+    about: Ask questions here instead of opening an issue.

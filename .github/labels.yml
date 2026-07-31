@@ -1,0 +1,67 @@
+- name: "arch:boot"
+  color: "d73a4a"
+  description: "Bootloader, real mode, protected mode, long mode transition"
+
+- name: "arch:interrupt"
+  color: "d73a4a"
+  description: "IDT, exception handlers, PIC/APIC"
+
+- name: "arch:paging"
+  color: "d73a4a"
+  description: "Page tables, higher-half kernel, virtual memory"
+
+- name: "arch:sched"
+  color: "d73a4a"
+  description: "Context switching, scheduler, task management"
+
+- name: "arch:syscall"
+  color: "d73a4a"
+  description: "syscall/sysret, userspace transition"
+
+- name: toolchain
+  color: "f9d0c4"
+  description: "Build system, compiler flags, linker scripts, Makefile"
+
+- name: bug
+  color: "d73a4a"
+  description: "Something isn't working"
+
+- name: docs
+  color: "0075ca"
+  description: "Improvements or additions to documentation"
+
+- name: driver
+  color: "a2eeef"
+  description: "Device drivers, hardware interface"
+
+- name: duplicate
+  color: "cfd3d7"
+  description: "This issue or pull request already exists"
+
+- name: enhancement
+  color: "a2eeef"
+  description: "New feature or request"
+
+- name: "good first issue"
+  color: "7057ff"
+  description: "Good for newcomers"
+
+- name: "help wanted"
+  color: "008672"
+  description: "Extra attention is needed"
+
+- name: invalid
+  color: "e4e669"
+  description: "This doesn't seem right"
+
+- name: question
+  color: "d876e3"
+  description: "Further information is requested"
+
+- name: wontfix
+  color: "ffffff"
+  description: "This will not be worked on"
+
+- name: stale
+  color: "bfd4f2"
+  description: "Marked stale due to inactivity"
