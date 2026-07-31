@@ -64,8 +64,8 @@ drive_num: db 0
 ; ===============================================================
 ; 16-bit includes (must assemble in [BITS 16] context)
 ; ===============================================================
-%include "boot/a20.asm"
-%include "boot/gdt.asm"
+%include "a20.asm"
+%include "gdt.asm"
 
 ; ===============================================================
 ; 32-bit Protected Mode
@@ -73,8 +73,8 @@ drive_num: db 0
 [BITS 32]
 
 ; 32-bit includes (pushfd/popfd/32-bit regs need correct operand size)
-%include "boot/cpuid.asm"
-%include "boot/longmode.asm"
+%include "cpuid.asm"
+%include "longmode.asm"
 
 ; longmode.asm ends in [BITS 64] — restore 32-bit for pmode_entry
 [BITS 32]

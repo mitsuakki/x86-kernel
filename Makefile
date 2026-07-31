@@ -8,6 +8,12 @@ BOOT_DIR   := boot
 KERNEL_DIR := kernel
 OUT_DIR    := out
 
+STAGE1_DIR := $(BOOT_DIR)/stage1
+STAGE2_DIR := $(BOOT_DIR)/stage2
+ARCH_DIR   := $(KERNEL_DIR)/arch/x86_64
+DRIVERS_DIR := $(KERNEL_DIR)/drivers
+LIB_DIR    := $(KERNEL_DIR)/lib
+
 BOOT_BIN   := $(OUT_DIR)/boot.bin
 LOADER_BIN := $(OUT_DIR)/loader.bin
 KERNEL_ELF := $(OUT_DIR)/kernel.elf
@@ -16,8 +22,9 @@ OS_IMG     := $(OUT_DIR)/os.img
 ASMFLAGS := -f bin
 CFLAGS   := -ffreestanding -nostdlib -m64 -mno-red-zone -mcmodel=large \
             -Wall -Wextra -O2 -std=c11 \
-            -fno-asynchronous-unwind-tables -fno-pic -fno-stack-protector
-LDFLAGS  := -melf_x86_64 -nostdlib -T kernel/linker.ld
+            -fno-asynchronous-unwind-tables -fno-pic -fno-stack-protector \
+            -I $(LIB_DIR) -I $(DRIVERS_DIR) -I $(ARCH_DIR)
+LDFLAGS  := -melf_x86_64 -nostdlib -T $(KERNEL_DIR)/linker.ld
 
 .PHONY: all build run debug gdb clean
 
@@ -29,12 +36,14 @@ $(OUT_DIR):
 	mkdir -p $@
 
 # Stage 1 — 512-byte bootsector (LBA 0)
-$(BOOT_BIN): $(BOOT_DIR)/boot.asm | $(OUT_DIR)
+$(BOOT_BIN): $(STAGE1_DIR)/boot.asm | $(OUT_DIR)
 	$(ASM) $(ASMFLAGS) -o $@ $<
 
 # Stage 2 — loads kernel, A20, GDT, protected mode, paging, ELF parser (LBA 1)
-$(LOADER_BIN): $(BOOT_DIR)/loader.asm $(BOOT_DIR)/gdt.asm | $(OUT_DIR)
-	$(ASM) $(ASMFLAGS) -o $@ $<
+$(LOADER_BIN): $(STAGE2_DIR)/loader.asm $(STAGE2_DIR)/a20.asm \
+               $(STAGE2_DIR)/gdt.asm $(STAGE2_DIR)/cpuid.asm \
+               $(STAGE2_DIR)/longmode.asm | $(OUT_DIR)
+	$(ASM) $(ASMFLAGS) -i $(STAGE2_DIR) -o $@ $<
 
 # Kernel ELF — linked at 0x100000 (1 MiB)
 $(KERNEL_ELF): $(KERNEL_DIR)/kernel.c $(KERNEL_DIR)/linker.ld | $(OUT_DIR)
