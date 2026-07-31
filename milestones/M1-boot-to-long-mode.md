@@ -6,10 +6,10 @@ Text output via VGA working.
 **Status:**
 - [x] Real mode bootsector (stage 1)
 - [x] A20 gate, GDT, protected mode switch (stage 2)
-- [x] CPUID + long mode detection (`boot/cpuid.asm`)
-- [x] 64-bit GDT entry (`boot/gdt.asm`)
-- [x] 4-level PAE paging, EFER.LME, long mode entry (`boot/longmode.asm`)
-- [x] ELF64 parser, kernel jump (`boot/loader.asm`)
+- [x] CPUID + long mode detection (`boot/stage2/cpuid.asm`)
+- [x] 64-bit GDT entry (`boot/stage2/gdt.asm`)
+- [x] 4-level PAE paging, EFER.LME, long mode entry (`boot/stage2/longmode.asm`)
+- [x] ELF64 parser, kernel jump (`boot/stage2/loader.asm`)
 - [x] 64-bit kernel: BSS zero via linker symbols, SysV ABI `call` boundary
 - [x] VGA text output (kernel.c)
 
@@ -33,7 +33,7 @@ addressable memory, no memory protection.
 
 ---
 
-## 2. Stage 1 — the bootsector (`boot/boot.asm`)
+## 2. Stage 1 — the bootsector (`boot/stage1/boot.asm`)
 
 We are at `0x7C00` in real mode.  We have exactly 510 bytes of code and data before
 the `0xAA55` signature.
@@ -96,16 +96,16 @@ dw 0xAA55                   ; boot signature at bytes 511-512
 
 ---
 
-## 3. Stage 2 (`boot/loader.asm`) — the bridge
+## 3. Stage 2 (`boot/stage2/loader.asm`) — the bridge
 
 We arrive at `0x8000`, still in real mode.  The loader does five things:
 
 1. Load the kernel ELF from disk (CHS read, 10 sectors to `0x10000`)
-2. Enable the A20 gate (extracted to `boot/a20.asm`)
-3. Enter protected mode (GDT at `boot/gdt.asm`; includes 64-bit code segment)
-4. CPUID + long mode check (`boot/cpuid.asm`)
+2. Enable the A20 gate (extracted to `boot/stage2/a20.asm`)
+3. Enter protected mode (GDT at `boot/stage2/gdt.asm`; includes 64-bit code segment)
+4. CPUID + long mode check (`boot/stage2/cpuid.asm`)
 5. Parse the 64-bit kernel ELF, copy segments, save entry point
-6. Call `enter_long_mode` (`boot/longmode.asm`) — builds 4-level PAE tables,
+6. Call `enter_long_mode` (`boot/stage2/longmode.asm`) — builds 4-level PAE tables,
    enables paging, far-jumps to 64-bit long mode, zeroes BSS, calls kernel
 
 ### 3a. Load the kernel ELF from disk
@@ -134,7 +134,7 @@ stage2_start:
     jc  disk_err
 ```
 
-### 3b. Enable the A20 gate (`boot/a20.asm`)
+### 3b. Enable the A20 gate (`boot/stage2/a20.asm`)
 
 Extracted to its own file for modularity.  Full fallback chain: check-first → BIOS
 INT 0x15 (AX=0x2401) → keyboard controller (8042, ports 0x64/0x60) → Fast A20 Gate
@@ -144,11 +144,11 @@ The check uses the wraparound trick: write 0x00 to `0x0000:0x0500` and 0xFF to
 `0xFFFF:0x0510`.  If A20 is off, both writes hit the same physical byte (bit 20
 masked to 0).  If they read back different, A20 is on.
 
-See `boot/a20.asm` for the full implementation (~125 lines).
+See `boot/stage2/a20.asm` for the full implementation (~125 lines).
 
 **Further reading:** <https://wiki.osdev.org/A20_Line>
 
-### 3c. Enter protected mode (`boot/gdt.asm`)
+### 3c. Enter protected mode (`boot/stage2/gdt.asm`)
 
 The GDT defines four descriptors in a flat memory model (base=0, limit=4 GiB):
 
@@ -189,7 +189,7 @@ pmode_entry:
 
 **Further reading:** <https://wiki.osdev.org/Protected_Mode>, <https://wiki.osdev.org/GDT>
 
-### 3d. CPUID + long mode check (`boot/cpuid.asm`)
+### 3d. CPUID + long mode check (`boot/stage2/cpuid.asm`)
 
 Two-stage check:
 
@@ -237,9 +237,9 @@ All 8-byte fields: we read the low 32 bits (kernel is linked at 1 MiB, fits in
 32 bits).  For each PT_LOAD segment: copy from ELF buffer to p_paddr, save BSS
 bounds (p_paddr + p_filesz → `__bss_start`, p_paddr + p_memsz → `__bss_end`),
 and save the 64-bit entry point to `kernel_entry` (dq 0, 8 bytes, in
-`boot/longmode.asm`).
+`boot/stage2/longmode.asm`).
 
-### 3f. Enter long mode (`boot/longmode.asm`)
+### 3f. Enter long mode (`boot/stage2/longmode.asm`)
 
 `enter_long_mode` (32-bit code, called from pmode_entry):
 
@@ -284,7 +284,7 @@ and save the 64-bit entry point to `kernel_entry` (dq 0, 8 bytes, in
 
 ---
 
-## 4. Kernel (`kernel/kernel.c` + `kernel/linker.ld`)
+## 4. Kernel (`kernel/kernel.c` + `kernel/arch/x86_64/linker.ld`)
 
 The kernel is compiled as 64-bit (`-m64`, `-mcmodel=large`, `-mno-red-zone`) and
 linked at `0x100000` (1 MiB).  The linker script exports `__bss_start` and
@@ -367,12 +367,12 @@ The VGA text-mode buffer lives at `0xB8000`.  Each character is 2 bytes:
 
 | File | Purpose | BITS |
 |------|---------|------|
-| `boot/boot.asm` | Stage 1 bootsector (CHS load, 512 B) | 16 |
-| `boot/loader.asm` | Stage 2: CHS load, A20, GDT, CPUID, ELF64 parse | 16→32 |
-| `boot/a20.asm` | A20 check + enable (BIOS, 8042, Fast A20) | 16 |
-| `boot/gdt.asm` | GDT: null, code32, data, code64 | 16 |
-| `boot/cpuid.asm` | CPUID check + long mode detection | 32 |
-| `boot/longmode.asm` | 4-level PAE tables, enter long mode, BSS zero, call kernel | 32→64 |
+| `boot/stage1/boot.asm` | Stage 1 bootsector (CHS load, 512 B) | 16 |
+| `boot/stage2/loader.asm` | Stage 2: CHS load, A20, GDT, CPUID, ELF64 parse | 16→32 |
+| `boot/stage2/a20.asm` | A20 check + enable (BIOS, 8042, Fast A20) | 16 |
+| `boot/stage2/gdt.asm` | GDT: null, code32, data, code64 | 16 |
+| `boot/stage2/cpuid.asm` | CPUID check + long mode detection | 32 |
+| `boot/stage2/longmode.asm` | 4-level PAE tables, enter long mode, BSS zero, call kernel | 32→64 |
 | `kernel/kernel.c` | C entry: clear_screen, write, loop | (C, -m64) |
-| `kernel/linker.ld` | Link at 0x100000, export __bss_start/__bss_end | — |
+| `kernel/arch/x86_64/linker.ld` | Link at 0x100000, export __bss_start/__bss_end | — |
 | `Makefile` | Build: nasm, gcc -m64, ld -melf_x86_64, dd image | — |
