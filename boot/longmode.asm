@@ -26,6 +26,9 @@ EFER_LME equ 1 << 8
 GDT_CODE64 equ 0x18
 GDT_DATA   equ 0x10
 
+; ---- Kernel entry point (set by ELF64 parser in loader.asm) ----
+kernel_entry: dq 0
+
 ; ===============================================================
 ; 32-bit section: build tables, enable paging, far jump to 64-bit.
 ; ===============================================================

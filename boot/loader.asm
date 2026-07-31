@@ -58,7 +58,6 @@ disk_err:
     jmp  $
 
 drive_num: db 0
-kernel_entry: dq 0               ; 64-bit kernel entry point, set by ELF64 parser
 
 ; Kernel loaded via CHS read — DAP not needed for floppy.
 
