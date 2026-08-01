@@ -52,7 +52,8 @@ jobs:
           echo "Checking ASM syntax..."
           for f in boot/**/*.asm; do
             echo "  Checking $f"
-            nasm -f bin -o /dev/null "$f" || exit 1
+            dir=$(dirname "$f")
+            nasm -f bin -i "$dir" -o /dev/null "$f" || exit 1
           done
 
       - name: Lint C sources
