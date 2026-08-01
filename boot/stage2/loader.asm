@@ -29,7 +29,7 @@ stage2_start:
     mov es, ax          ; ES = 0x1000
     mov bx, 0x0000      ; ES:BX = 0x1000:0x0000 = physical 0x10000
     mov ah, 0x02        ; CHS read
-    mov al, 10          ; 10 sectors (5120 bytes)
+    mov al, 64          ; 64 sectors (32 KiB)
     mov ch, 0           ; cylinder 0
     mov cl, 10          ; sector 10 (LBA 9 → (9 % 18) + 1 = 10)
     mov dh, 0           ; head 0
