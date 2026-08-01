@@ -6,7 +6,7 @@
 ; Error codes: 8 (#DF), 10 (#TS), 11 (#NP), 12 (#SS), 13 (#GP),
 ;              14 (#PF), 17 (#AC), 21 (#CP), 29 (#VC), 30 (#SX)
 
-extern isr_handler
+extern exception_handler
 
 ; ---- Stub for exceptions WITHOUT error code ----
 ; CPU pushes: [RFLAGS, CS, RIP] (no error code).
@@ -49,7 +49,7 @@ isr_common_stub:
 
     ; Pass registers_t* in rdi (System V ABI first argument)
     mov rdi, rsp
-    call isr_handler
+    call exception_handler
 
     ; Restore GPRs — reverse order
     pop r15

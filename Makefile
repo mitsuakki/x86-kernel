@@ -23,6 +23,7 @@ ASMFLAGS := -f bin
 CFLAGS   := -ffreestanding -nostdlib -m64 -mno-red-zone -mcmodel=large \
             -Wall -Wextra -O2 -std=c11 \
             -fno-asynchronous-unwind-tables -fno-pic -fno-stack-protector \
+            -fno-tree-vectorize \
             -I $(LIB_DIR) -I $(DRIVERS_DIR) -I $(ARCH_DIR)
 LDFLAGS  := -melf_x86_64 -nostdlib -T $(KERNEL_DIR)/linker.ld
 
@@ -49,12 +50,17 @@ KERNEL_C := $(shell find $(KERNEL_DIR) -name '*.c')
 KERNEL_O := $(patsubst $(KERNEL_DIR)/%.c, $(OUT_DIR)/%.o, $(KERNEL_C))
 
 # Kernel ELF — linked at 0x100000 (1 MiB)
-$(KERNEL_ELF): $(KERNEL_O) $(KERNEL_DIR)/linker.ld | $(OUT_DIR)
-	$(LD) $(LDFLAGS) -o $@ $(KERNEL_O)
+$(KERNEL_ELF): $(KERNEL_O) $(OUT_DIR)/arch/x86_64/isr_stubs.o $(KERNEL_DIR)/linker.ld | $(OUT_DIR)
+	$(LD) $(LDFLAGS) -o $@ $(KERNEL_O) $(OUT_DIR)/arch/x86_64/isr_stubs.o
 
 $(OUT_DIR)/%.o: $(KERNEL_DIR)/%.c | $(OUT_DIR)
 	@mkdir -p $(dir $@)
 	$(CC) $(CFLAGS) -c -o $@ $<
+
+# IDT asm stubs — 32 ISR entry points + common handler
+$(OUT_DIR)/arch/x86_64/isr_stubs.o: $(ARCH_DIR)/isr_stubs.asm | $(OUT_DIR)
+	@mkdir -p $(dir $@)
+	$(ASM) -f elf64 -o $@ $<
 
 # Disk image — 1.44 MiB floppy
 $(OS_IMG): $(BOOT_BIN) $(LOADER_BIN) $(KERNEL_ELF) | $(OUT_DIR)
