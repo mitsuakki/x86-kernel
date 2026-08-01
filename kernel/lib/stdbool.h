@@ -3,7 +3,9 @@
 
 typedef enum {
     false = 0,
-    true
+    true  = 1
 } bool;
+
+#define TO_BOOL(x) ((x) ? true : false)
 
 #endif // STDBOOL_H
