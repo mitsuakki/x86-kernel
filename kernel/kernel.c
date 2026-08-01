@@ -8,5 +8,9 @@ void kernel_main()
     clear_screen();
     write("I love my girlfriend!", COLOR_WHITE);
 
+    // M2 test: trigger breakpoint exception (vector 3).
+    // Should print "EXCEPTION 0x03 HALTED" then halt.
+    __asm__ volatile ("int $0x3");
+
     for (;;) {}
 }

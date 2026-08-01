@@ -3,6 +3,8 @@
 
 #include "../../lib/stdint.h"
 
+#define GDT_OFFSET_KERNEL_CODE 0x18
+
 // In order to make interrupts, we need an IDT.
 // When an interrupt is fired, the CPU uses the vector as an index into the IDT.
 // The CPU reads the entry of the IDT in order to figure out what to do prior to calling the ISR.
@@ -30,9 +32,6 @@ typedef struct {
 // Simply, an IDT is just a 256-entry array of descriptors
 #define IDT_MAX_DESCRIPTORS 256
 
-__attribute__((aligned(0x10)))
-static idt_entry_t idt[IDT_MAX_DESCRIPTORS];
-
 // We also need a special IDTR structure (10 bytes, packed)
 // Packed struct is important here because the compiler may add padding between fields
 // breaking hardware layout.
@@ -41,17 +40,38 @@ typedef struct {
     uint64_t base;  // 8 bytes so offset (2) & size (8)
 } __attribute__((packed)) idtr_t;
 
-// And of course, we have to define it.
-static idtr_t idtr;
 
-static inline void idt_init()
-{
-    idtr.base  = (uintptr_t)&idt[0];
-    idtr.limit = (uint16_t)sizeof(idt_entry_t) * IDT_MAX_DESCRIPTORS - 1;
+// Exception vectors — https://wiki.osdev.org/Exceptions
+// "Err" column = CPU pushes error code onto stack.
+#define EXCEPTION_DIVISION_BY_ZERO           0x00  // #DE  Fault      Err: no
+#define EXCEPTION_DEBUG                      0x01  // #DB  Fault/Trap Err: no
+#define EXCEPTION_NON_MASKABLE_INTERRUPT     0x02  // -    Interrupt  Err: no
+#define EXCEPTION_BREAKPOINT                 0x03  // #BP  Trap       Err: no
+#define EXCEPTION_OVERFLOW                   0x04  // #OF  Trap       Err: no
+#define EXCEPTION_BOUND_RANGE_EXCEEDED       0x05  // #BR  Fault      Err: no
+#define EXCEPTION_INVALID_OPCODE             0x06  // #UD  Fault      Err: no
+#define EXCEPTION_DEVICE_NOT_AVAILABLE       0x07  // #NM  Fault      Err: no
+#define EXCEPTION_DOUBLE_FAULT               0x08  // #DF  Abort      Err: yes (zero)
+#define EXCEPTION_COPROCESSOR_SEGMENT_OVERRUN 0x09 // -    Fault      Err: no
+#define EXCEPTION_INVALID_TSS                0x0A  // #TS  Fault      Err: yes
+#define EXCEPTION_SEGMENT_NOT_PRESENT        0x0B  // #NP  Fault      Err: yes
+#define EXCEPTION_STACK_SEGMENT_FAULT        0x0C  // #SS  Fault      Err: yes
+#define EXCEPTION_GENERAL_PROTECTION_FAULT   0x0D  // #GP  Fault      Err: yes
+#define EXCEPTION_PAGE_FAULT                 0x0E  // #PF  Fault      Err: yes
+// Vector 0x0F — Reserved
+#define EXCEPTION_X87_FLOATING_POINT         0x10  // #MF  Fault      Err: no
+#define EXCEPTION_ALIGNMENT_CHECK            0x11  // #AC  Fault      Err: yes (zero)
+#define EXCEPTION_MACHINE_CHECK              0x12  // #MC  Abort      Err: no
+#define EXCEPTION_SIMD_FLOATING_POINT        0x13  // #XM  Fault      Err: no
+#define EXCEPTION_VIRTUALIZATION             0x14  // #VE  Fault      Err: no
+#define EXCEPTION_CONTROL_PROTECTION         0x15  // #CP  Fault      Err: yes
+// Vectors 0x16–0x1B — Reserved
+#define EXCEPTION_HYPERVISOR_INJECTION       0x1C  // #HV  Fault      Err: no
+#define EXCEPTION_VMM_COMMUNICATION          0x1D  // #VC  Fault      Err: yes
+#define EXCEPTION_SECURITY                   0x1E  // #SX  Fault      Err: yes
+// Vector 0x1F — Reserved
 
-    // lidt loads the IDTR from memory. "m"(idtr) passes the struct directly
-    // The CPU reads 10 bytes (2 limit + 8 base) and loads the IDT.
-    __asm__ volatile ("lidt %0" :: "m"(idtr));
-}
+void idt_init(void);
+void idt_set_descriptor(uint8_t vector, void* isr, uint8_t flags);
 
 #endif // IDT_H
