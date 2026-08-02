@@ -1,5 +1,5 @@
-#ifndef STDBOOL_H
-#define STDBOOL_H
+#ifndef KERNEL_STDBOOL_H
+#define KERNEL_STDBOOL_H
 
 typedef enum {
     false = 0,
@@ -8,4 +8,4 @@ typedef enum {
 
 #define TO_BOOL(x) ((x) ? true : false)
 
-#endif // STDBOOL_H
+#endif // KERNEL_STDBOOL_H
