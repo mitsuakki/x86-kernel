@@ -3,13 +3,13 @@
 
 #include "../../lib/stdbool.h"
 
-static inline void enable_interruptions(void)
+static inline void enable_interrupts(void)
 {
     // sti: Set Interrupt Flags
     __asm__ volatile ("sti");
 }
 
-static inline void disable_interruptions(void)
+static inline void disable_interrupts(void)
 {
     // cli: Clear Interrupt Flags
     __asm__ volatile ("cli");
