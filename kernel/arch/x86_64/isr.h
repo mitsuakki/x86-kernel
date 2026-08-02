@@ -3,7 +3,7 @@
 
 #include "../../lib/stdint.h"
 
-// Register frame saved by isr_common_stub in isr_stubs.asm.
+// Register frame saved by exception_common_stub in isr_stubs.asm.
 //
 // Stack layout after pushaq (growing upward -> higher addresses):
 //
@@ -12,7 +12,7 @@
 //  [rip]
 //  [err_code]    <- CPU (or dummy 0 pushed by stub)
 //  [int_no]      <- pushed by stub
-//  [rax]         <- 1st push in isr_common_stub
+//  [rax]         <- 1st push in exception_common_stub
 //  [rbx]
 //  [rcx]         (System V arg4)
 //  [rdx]         (System V arg3)
@@ -48,7 +48,7 @@ typedef struct {
     uint64_t rbx;        // [rsp + 0x68]
     uint64_t rax;        // [rsp + 0x70]  pushed first -> highest reg addr
 
-    // pushed by stub before jmp isr_common_stub
+    // pushed by stub before jmp exception_common_stub
     uint64_t int_no;     // [rsp + 0x78]  interrupt vector (0-31)
     uint64_t err_code;   // [rsp + 0x80]  CPU error code or dummy 0
 
@@ -62,4 +62,6 @@ typedef struct {
     uint64_t ss;         // [rsp + 0xA8]  stack segment
 } __attribute__((packed)) registers_t;
 
-#endif //  KERNEL_ISR_H
+void exception_handler(registers_t *r);
+
+#endif // KERNEL_ISR_H
