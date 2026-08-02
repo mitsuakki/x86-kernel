@@ -7,7 +7,8 @@ static idt_entry_t idt[IDT_MAX_DESCRIPTORS];
 static idtr_t idtr;
 
 static bool vectors[IDT_MAX_DESCRIPTORS];
-extern void* isr_stub_table[];
+extern void* exception_stub_table[];
+extern void* irq_stub_table[];
 
 void idt_init()
 {
@@ -15,7 +16,12 @@ void idt_init()
     idtr.limit = (uint16_t)sizeof(idt_entry_t) * IDT_MAX_DESCRIPTORS - 1;
 
     for (uint8_t vector = 0; vector < 32; vector++) {
-        idt_set_descriptor(vector, isr_stub_table[vector], IDT_GATE_INTERRUPT);
+        idt_set_descriptor(vector, exception_stub_table[vector], IDT_GATE_INTERRUPT);
+        vectors[vector] = true;
+    }
+
+    for (uint8_t vector = 32; vector < 48; vector++) {
+        idt_set_descriptor(vector, irq_stub_table[vector - 32], IDT_GATE_INTERRUPT);
         vectors[vector] = true;
     }
 
