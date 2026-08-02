@@ -42,7 +42,7 @@ static const char *const exception_names[32] = {
 } while(0)
 
 __attribute__((noreturn))
-void isr_handler(registers_t *r)
+void exception_handler(registers_t *r)
 {
     vga_puts(exception_names[r->int_no]);
     vga_putchar('\n');
