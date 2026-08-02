@@ -1,5 +1,5 @@
-#ifndef VGA_H
-#define VGA_H
+#ifndef KERNEL_VGA_H
+#define KERNEL_VGA_H
 
 #include "../lib/stdint.h"
 #include "../lib/stddef.h"
@@ -9,8 +9,12 @@
 #define VGA_CTRL_REGISTER 0x3D4
 #define VGA_DATA_REGISTER 0x3D5
 
-static const size_t VGA_WIDTH  = 80;
-static const size_t VGA_HEIGHT = 25;
+#define HEART_WIDTH  40
+#define HEART_HEIGHT 20
+#define HEART_SCALE  1000  // fixed-point precision
+
+#define VGA_WIDTH  80
+#define VGA_HEIGHT 25
 
 typedef struct  {
     uint8_t x; // 80
@@ -49,7 +53,12 @@ void vga_putchar(const char c);
 void vga_putchar_at(const char c, vga_pos_t pos);
 void vga_puts(const char* str);
 
+void vga_puthex(uint64_t value);
+
 void vga_clear(void);
 void vga_init(void);
 
-#endif // VGA_H
+// kernel logo
+void vga_draw_heart(uint8_t start_x, uint8_t start_y);
+
+#endif // KERNEL_VGA_H
