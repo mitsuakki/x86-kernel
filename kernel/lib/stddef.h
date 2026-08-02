@@ -1,8 +1,8 @@
-#ifndef STDDEF_H
-#define STDDEF_H
+#ifndef KERNEL_STDDEF_H
+#define KERNEL_STDDEF_H
 
 typedef unsigned long size_t;
 
 #define NULL ((void *)0)
 
-#endif // STDDEF_H
+#endif // KERNEL_STDDEF_H
