@@ -9,35 +9,35 @@
 #define VGA_CTRL_REGISTER 0x3D4
 #define VGA_DATA_REGISTER 0x3D5
 
-#define HEART_WIDTH  40
-#define HEART_HEIGHT 20
-#define HEART_SCALE  1000  // fixed-point precision
+#define VGA_KERNEL_LOGO_HEART_WIDTH  40
+#define VGA_KERNEL_LOGO_HEART_HEIGHT 20
+#define VGA_KERNEL_LOGO_HEART_SCALE  1000
 
 #define VGA_WIDTH  80
 #define VGA_HEIGHT 25
 
 typedef struct  {
-    uint8_t x; // 80
-    uint8_t y; // 25
+    uint8_t x; // 80 max
+    uint8_t y; // 25 max
 } vga_pos_t;
 
 enum vga_color {
-    COLOR_BLACK = 0,
-    COLOR_BLUE,
-    COLOR_GREEN,
-    COLOR_CYAN,
-    COLOR_RED,
-    COLOR_MAGENTA,
-    COLOR_BROWN,
-    COLOR_LIGHT_GRAY,
-    COLOR_DARK_GRAY,
-    COLOR_LIGHT_BLUE,
-    COLOR_LIGHT_GREEN,
-    COLOR_LIGHT_CYAN,
-    COLOR_LIGHT_RED,
-    COLOR_LIGHT_MAGENTA,
-    COLOR_LIGHT_BROWN,
-    COLOR_WHITE, // 15
+    VGA_COLOR_BLACK = 0,
+    VGA_COLOR_BLUE,
+    VGA_COLOR_GREEN,
+    VGA_COLOR_CYAN,
+    VGA_COLOR_RED,
+    VGA_COLOR_MAGENTA,
+    VGA_COLOR_BROWN,
+    VGA_COLOR_LIGHT_GRAY,
+    VGA_COLOR_DARK_GRAY,
+    VGA_COLOR_LIGHT_BLUE,
+    VGA_COLOR_LIGHT_GREEN,
+    VGA_COLOR_LIGHT_CYAN,
+    VGA_COLOR_LIGHT_RED,
+    VGA_COLOR_LIGHT_MAGENTA,
+    VGA_COLOR_LIGHT_BROWN,
+    VGA_COLOR_WHITE, // 15
 };
 
 uint8_t  vga_make_color(enum vga_color fg, enum vga_color bg);
