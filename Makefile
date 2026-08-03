@@ -37,13 +37,13 @@ $(OUT_DIR):
 	mkdir -p $@
 
 # Stage 1 — 512-byte bootsector (LBA 0)
-$(BOOT_BIN): $(STAGE1_DIR)/boot.asm | $(OUT_DIR)
+$(BOOT_BIN): $(STAGE1_DIR)/boot.s | $(OUT_DIR)
 	$(ASM) $(ASMFLAGS) -o $@ $<
 
 # Stage 2 — loads kernel, A20, GDT, protected mode, paging, ELF parser (LBA 1)
-$(LOADER_BIN): $(STAGE2_DIR)/loader.asm $(STAGE2_DIR)/a20.asm \
-               $(STAGE2_DIR)/gdt.asm $(STAGE2_DIR)/cpuid.asm \
-               $(STAGE2_DIR)/longmode.asm | $(OUT_DIR)
+$(LOADER_BIN): $(STAGE2_DIR)/loader.s $(STAGE2_DIR)/a20.s \
+               $(STAGE2_DIR)/gdt.s $(STAGE2_DIR)/cpuid.s \
+               $(STAGE2_DIR)/longmode.s | $(OUT_DIR)
 	$(ASM) $(ASMFLAGS) -i $(STAGE2_DIR) -o $@ $<
 
 KERNEL_C := $(shell find $(KERNEL_DIR) -name '*.c')
@@ -58,7 +58,7 @@ $(OUT_DIR)/%.o: $(KERNEL_DIR)/%.c | $(OUT_DIR)
 	$(CC) $(CFLAGS) -c -o $@ $<
 
 # IDT asm stubs — 32 ISR entry points + common handler
-$(OUT_DIR)/arch/x86_64/isr_stubs.o: $(ARCH_DIR)/isr_stubs.asm | $(OUT_DIR)
+$(OUT_DIR)/arch/x86_64/isr_stubs.o: $(ARCH_DIR)/isr_stubs.s | $(OUT_DIR)
 	@mkdir -p $(dir $@)
 	$(ASM) -f elf64 -o $@ $<
 
