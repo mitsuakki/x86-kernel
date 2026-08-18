@@ -50,7 +50,7 @@ jobs:
       - name: Lint assembly
         run: |
           echo "Checking ASM syntax..."
-          for f in boot/**/*.asm; do
+          for f in boot/**/*.s; do
             echo "  Checking $f"
             dir=$(dirname "$f")
             nasm -f bin -i "$dir" -o /dev/null "$f" || exit 1
