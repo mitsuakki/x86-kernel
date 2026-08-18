@@ -2,8 +2,8 @@
 #include "arch/x86_64/idt.h"
 #include "arch/x86_64/interrupts.h"
 
-#include "drivers/vga.h"
 #include "drivers/keyboard.h"
+#include "drivers/vga.h"
 
 void kernel_main()
 {
@@ -11,6 +11,7 @@ void kernel_main()
     idt_init();
 
     vga_init();
+    keyboard_init();
     enable_interrupts();
 
     for (;;) {} // kernel never stop
