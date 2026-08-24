@@ -48,4 +48,4 @@ Built with NASM and a lot of Intel/AMD manual reading. If you're going through t
 
 ## 📄 License
 
-TBD.
+MIT
