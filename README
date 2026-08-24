@@ -1,0 +1,57 @@
+<p align="center">
+  <a href="https://github.com/mitsuakki/baremetal-x86_64-kernel">
+    <img width="150px" src="https://avatars.githubusercontent.com/mitsuakki">
+  </a>
+</p>
+
+<h1 align="center">baremetal-x86_64-kernel</h1>
+
+<h4 align="center">
+  <a href="https://github.com/mitsuakki/baremetal-x86_64-kernel/issues">Issues</a> |
+  <a href="https://github.com/mitsuakki">Author</a>
+</h4>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/arch-x86__64-blue?style=for-the-badge">
+  <img src="https://img.shields.io/badge/asm-NASM-orange?style=for-the-badge">
+  <img src="https://img.shields.io/badge/status-work%20in%20progress-yellow?style=for-the-badge">
+</p>
+
+## What is this
+
+A **x86_64 kernel built from scratch**, in NASM, with no framework and no tutorial-following on autopilot. The goal isn't to ship a usable OS, it's to actually understand what happens between power-on and a scheduler running processes: real mode, the transition to protected mode, then long mode, paging, interrupts, and everything else the CPU hides behind abstractions the rest of the time.
+
+This is a learning and portfolio project. Expect rough edges, and expect the boot chain to be more polished than the parts further out.
+
+## 🧭 Roadmap
+
+Progress is tracked through [GitHub milestones](https://github.com/mitsuakki/baremetal-x86_64-kernel/milestones), from real mode up to userspace:
+
+| Milestone | Focus |
+|---|---|
+| **[M1 - Boot to long mode](https://github.com/mitsuakki/baremetal-x86_64-kernel/milestone/1)** | real mode → protected mode → long mode, minimal paging to enable it, text output working |
+| **[M2 - Interrupts](https://github.com/mitsuakki/baremetal-x86_64-kernel/milestone/2)** | IDT, exception handlers, PIC/APIC init |
+| **[M3 - Paging](https://github.com/mitsuakki/baremetal-x86_64-kernel/milestone/3)** | proper page tables, higher-half kernel jump, dynamic mapping |
+| **[M4 - Timer](https://github.com/mitsuakki/baremetal-x86_64-kernel/milestone/4)** | APIC timer or PIT, tick counter |
+| **[M5 - Memory management](https://github.com/mitsuakki/baremetal-x86_64-kernel/milestone/5)** | physical frame allocator, kernel heap |
+| **[M6 - Scheduling](https://github.com/mitsuakki/baremetal-x86_64-kernel/milestone/6)** | context switch, cooperative round-robin |
+| **[M7 - Syscalls](https://github.com/mitsuakki/baremetal-x86_64-kernel/milestone/7)** | syscall/sysret, first userspace binary |
+
+## 🛠️ Building & running
+
+```bash
+git clone https://github.com/mitsuakki/baremetal-x86_64-kernel.git
+cd baremetal-x86_64-kernel
+make
+qemu-system-x86_64 -kernel build/kernel.bin
+```
+
+*(adjust the exact `make`/`qemu` invocation to match your actual build setup)*
+
+## 📚 Notes
+
+Built with NASM and a lot of Intel/AMD manual reading. If you're going through the same rabbit hole, [OSDev Wiki](https://wiki.osdev.org/) is where most of this started.
+
+## 📄 License
+
+TBD.
